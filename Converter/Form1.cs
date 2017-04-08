@@ -1648,8 +1648,16 @@ namespace Converter
             }
             return DroAver;
         }
-
+        double DEL = 1;
         static pertubResult tempR;
+        int indexSS = 1000;
+        StreamWriter lll = new StreamWriter("D:\\дЛЯ ВЫВОДа.txt");
+        StreamWriter lllВ = new StreamWriter("D:\\дЛЯ ПРОВЕРКИ ТЕНДЕНЦИИ.txt");
+        
+        List<double> SsOLD = new List<double>();
+        List<double> SsNEW = new List<double>();
+        List<double> TAUlist = new List<double>();
+        List<double> SsList = new List<double>();
         private void SearchDiffEffect()
         {
             tempR = new pertubResult();
@@ -1662,14 +1670,56 @@ namespace Converter
                 for (int i = 0; i < 400; i++)
                 {
                     tempR = Calc(3 + i / 200.0, _tList, _jKorList, _rCalcList, _dHList);
-                    if (tempR.SS > Ss)
-                    {
-                        tempR = Calc(3 + (i - 1) / 200.0, _tList, _jKorList, _rCalcList, _dHList);
-                        break;
-                    }
+                  //  lllВ.WriteLine(tempR.SS + " " + Ss);
+                    SsOLD.Add(Ss);
+                    SsNEW.Add(tempR.SS);
+                    TAUlist.Add(tempR.tau);
+                //    if (tempR.SS > Ss)
+                   // {
+                      //  MessageBox.Show(tempR.SS + " " + Ss);
+                       // tempR = Calc(3 + (i - 1) / 200.0, _tList, _jKorList, _rCalcList, _dHList);
+                        //TODO: 400 РАЗ ОБРАБАТЫВАЕТСЯ ОДНО И ТОЖЕ ВОЗМУЩЕНИЕ С РАЗНЫМ ПОДБОРОМ ТАУ. В МЕТОДЕ CALC ВСЕГДА НАБИРАЕТСЯ СУММА КВАДРАТОВ РАЗНОСТЕЙ РЕАКТВИНОСТЕЙ НАЗВАЕМОЙ НЕВЯЗКОЙ. 
+                        //TODO: TEMPR.SS В НЕМ ЖЕ ПРИРАВНИВАЕТСЯ ЭТОЙ СУММЕ. В ИТОГЕ ПО УСЛОВИЮ И ПО ЛОГИКЕ НЕВЯЗКА ИЛИ ЖЕ СВОЙСТВО TEMPR.SS СРАВНИВАЕТСЯ C ЕГО ЖЕ ПРЕДЫДУЩЕМ ЗНАЧЕНИЕМ
+                        //TODO: И КАК ТОЛЬКО ЭТО СВОЙСТВО СТАНОВИТСЯ БОЛЬШЕ ПРЕДЫДУЩЕГО ТО ПРОИСХОДИТ ОТКАТ К ПРЕДЫДУЩЕМУ ЗНАЧЕНИЮ ТАУ И АЛГОРИТМ ПРЕРЫВАЕТСЯ
+                        //TODO: ВОПРОС: МОЖЕТ ЛИ БЫТЬ ПОСЛЕ СРАБАТЫВАНИЯ ВЕЛИЧИНА НЕВЯЗКИ МЕНЬШЕ ТОГО ЧТО БЫЛО ЕСЛИ АЛГОРИТМ НЕ ПРЕРВЕТСЯ ВЕДЬ ИЗ ФАЙЛА ЗАПИСИ ВИДНО ЧТО 
+                    //    break;
+                  //  }
+                  //  lll.WriteLine(tempR.aH + " " + tempR.tau + " " + tempR.SS);
                     Ss = tempR.SS;
                 }
+
+
+        
+             //   double DEL = 1;
+                for (int i = 0; i < SsOLD.Count; i++)
+                {
+                    lll.WriteLine(SsNEW[i] + " " + SsOLD[i] + " " + TAUlist[i]);
+                }
+
+            //    lllВ.WriteLine(tempR.SS + " " + Ss);
+                for (int i = 0; i < SsOLD.Count; i++)
+                {
+                    if ((SsNEW[i] - SsOLD[i])>0)
+                    {
+                        if (SsNEW[i] - SsOLD[i]< DEL)
+                        {
+                            DEL = SsNEW[i] - SsOLD[i];
+                            indexSS = i;
+                        }
+                    }
+                    SsList.Add(SsNEW[i]-SsOLD[i]);
+                }
+
+
+
+                tempR = Calc(TAUlist[indexSS], _tList, _jKorList, _rCalcList, _dHList);
+
+                lllВ.WriteLine(SsNEW[indexSS] + " " + SsOLD[indexSS] + " " + TAUlist[indexSS]);
+
+
             }
+            lll.Close();
+            lllВ.Close();
             if (comboBox6.Text == "3")
             {
               //  tempR = new pertubResult();
@@ -1982,6 +2032,11 @@ namespace Converter
                 }
             }
 
+            for (int i = 0; i < 200; i++)
+            {
+                _dHList.Add(ddH);
+            }
+
 
             int indexDDH = 0;
            
@@ -1991,7 +2046,7 @@ namespace Converter
                 if (comboBox2.Text == MyAllSensors[i].KKS_Name)
                 {
                     for (int j = indexPositionCursorList[0];
-                        j < indexPositionCursorList[indexPositionCursorList.Count - 1] + 1;
+                        j < indexPositionCursorList[indexPositionCursorList.Count - 1] + 201;
                         j++)
                     {
                         double Inext = MyAllSensors[i].MyListRecordsForOneKKS[j].Value/
@@ -2001,7 +2056,7 @@ namespace Converter
                         //  MessageBox.Show(_dHList[indexDDH] + " " + _dHList[indexDDH - 1]);
                         if (_jExpList.Count > 0 && indexDDH > 0)
                         {
-                            _jKorList.Add(Inext - (PE*(_dHList[indexDDH] - _dHList[indexDDH - 1])));
+                            _jKorList.Add(Inext - (PE*(_dHList[indexDDH])));
                         }
                         if (_jExpList.Count == 0)
                         {
@@ -2021,7 +2076,7 @@ namespace Converter
                 if (comboBox1.Text == MyAllSensors[i].KKS_Name)
                 {
                     for (int j = indexPositionCursorList[0];
-                        j < indexPositionCursorList[indexPositionCursorList.Count - 1] + 1;
+                        j < indexPositionCursorList[indexPositionCursorList.Count - 1] + 201;
                         j++)
                     {
                         _rExpList.Add(MyAllSensors[i].MyListRecordsForOneKKS[j].Value);
@@ -2592,12 +2647,21 @@ namespace Converter
                 cnt++;
             } //i
             myresult.SS = sS;
-
-
-
             return myresult;
         }
-
+        //   tempR = new pertubResult();
+           //     for (int i = 0; i < 400; i++)
+            //    {
+               //     tempR = Calc(3 + i / 200.0, _tList, _jKorList, _rCalcList, _dHList);
+                //    if (tempR.SS > Ss)
+                //    {
+                //        MessageBox.Show(tempR.SS + " " + Ss);
+                 //       tempR = Calc(3 + (i - 1) / 200.0, _tList, _jKorList, _rCalcList, _dHList);
+                 //       break;
+                //    }
+                //    lll.WriteLine(tempR.aH + " " + tempR.tau + " " + tempR.SS);
+                 //   Ss = tempR.SS;
+              //  }
         private void button14_Click(object sender, EventArgs e)
         {
             if (saveFileDialog4.ShowDialog() == DialogResult.OK)
